@@ -1,51 +1,66 @@
-# This example script demonstrates how to send/receive commands to/from Tello
+# This example script demonstrates how to use Python to fly Tello in a box mission
 # This script is part of our course on Tello drone programming
 # https://learn.droneblocks.io/p/tello-drone-programming-with-python/
 
-# Import the built-in socket and time modules
+# Import the necessary modules
 import socket
+import threading
 import time
 
 # IP and port of Tello
 tello_address = ('192.168.10.1', 8889)
 
+# IP and port of local computer
+local_address = ('', 9000)
+
 # Create a UDP connection that we'll send the command to
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-# Let's be explicit and bind to a local port on our machine where Tello can send messages
-sock.bind(('', 9000))
+# Bind to the local address and port
+sock.bind(local_address)
 
-# Function to send messages to Tello
-def send(message):
+# Send the message to Tello and allow for a delay in seconds
+def send(message, delay):
+  # Try to send the message otherwise print the exception
   try:
     sock.sendto(message.encode(), tello_address)
     print("Sending message: " + message)
   except Exception as e:
     print("Error sending: " + str(e))
 
-# Function that listens for messages from Tello and prints them to the screen
+  # Delay for a user-defined period of time
+  time.sleep(delay)
+
+# Receive the message from Tello
 def receive():
-  try:
-    response, ip_address = sock.recvfrom(128)
-    print("Received message: " + response.decode(encoding='utf-8') + " from Tello with IP: " + str(ip_address))
-  except Exception as e:
-    print("Error receiving: " + str(e))
+  # Continuously loop and listen for incoming messages
+  while True:
+    # Try to receive the message otherwise print the exception
+    try:
+      response, ip_address = sock.recvfrom(128)
+      print("Received message: " + response.decode(encoding='utf-8'))
+    except Exception as e:
+      # If there's an error close the socket and break out of the loop
+      sock.close()
+      print("Error receiving: " + str(e))
+      break
+
+# Create and start a listening thread that runs in the background
+# This utilizes our receive functions and will continuously monitor for incoming messages
+receiveThread = threading.Thread(target=receive)
+receiveThread.daemon = True
+receiveThread.start()
+
+######################################CODE GOES BELOW HERE ########################################################
 
 
-# Send Tello into command mode
-send("command")
 
-# Receive response from Tello
-receive()
 
-# Delay 3 seconds before we send the next command
-time.sleep(3)
+# Land
+send("land", 5)
 
-# Ask Tello about battery status
-send("battery?")
+# Print message
+print("Mission completed successfully!")
 
-# Receive battery response from Tello
-receive()
-
-# Close the UDP socket
+# Close the socket
 sock.close()
