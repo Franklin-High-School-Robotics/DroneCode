@@ -82,7 +82,7 @@ send("cw " + str(yaw_angle), 3)
 send("forward " + str(box_leg_distance), 4)
 
 # Yaw right
-send("cw " + str(yaw_angle), 3)
+send("cw " + str(yaw_angle), 4)
 
 # Fly forward
 send("forward " + str(box_leg_distance), 4)
